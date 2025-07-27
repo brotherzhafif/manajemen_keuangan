@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AddAccountScreen extends StatefulWidget {
   const AddAccountScreen({super.key});
@@ -20,9 +22,29 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
     super.dispose();
   }
 
-  void _submitForm() {
+  void _submitForm() async {
     if (_formKey.currentState!.validate()) {
-
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('User belum login')));
+        return;
+      }
+      double saldo = 0;
+      try {
+        saldo = double.parse(_balanceController.text.replaceAll('.', ''));
+      } catch (e) {
+        saldo = 0;
+      }
+      await FirebaseFirestore.instance.collection('rekening').add({
+        'id_user': user.uid,
+        'jenis': 'custom',
+        'nama_rekening': _nameController.text.trim(),
+        'iconPath': '',
+        'target': null,
+        'jumlah_saldo': saldo,
+      });
       Navigator.pop(context);
     }
   }
@@ -33,9 +55,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
       appBar: AppBar(
         title: Text(
           'Tambah Rekening',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-          ),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
         backgroundColor: const Color(0xFF47663C),
         foregroundColor: Colors.white,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../account/add_account_screen.dart';
 import '../transaction/add_transaction_screen.dart';
 import '../report/report_screen.dart';
@@ -15,49 +17,54 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
-  final String _userName = "Taufik Kurniawan";
-  final double _totalBalance = 3500000.00; // Total saldo tetap untuk UI
-  
-  // Data untuk rekening (menggunakan kategori anggaran)
-  final List<Account> _accounts = [
-    Account(
-      id: '1',
-      name: 'Kebutuhan',
-      balance: 2000000.00,
-      iconPath: 'Icons.coffee',
-    ),
-    Account(
-      id: '2',
-      name: 'Keinginan',
-      balance: 500000.00,
-      iconPath: 'Icons.shopping_cart',
-    ),
-    Account(
-      id: '3',
-      name: 'Investasi',
-      balance: 800000.00,
-      iconPath: 'Icons.trending_up',
-    ),
-    Account(
-      id: '4',
-      name: 'Tabungan',
-      balance: 200000.00,
-      iconPath: 'Icons.credit_card',
-    ),
-  ];
-  
-  // Format currency
+  String _userName = "";
+  double _totalBalance = 0.0;
+  List<Account> _accounts = [];
   final NumberFormat currencyFormatter = NumberFormat.currency(
     locale: 'id_ID',
     symbol: 'Rp ',
     decimalDigits: 2,
   );
-  
+
   @override
   void initState() {
     super.initState();
+    _fetchUserAndAccounts();
   }
-  
+
+  Future<void> _fetchUserAndAccounts() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    // Ambil nama user
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+    setState(() {
+      _userName = userDoc.data()?['firstname'] ?? '';
+    });
+    // Ambil rekening user
+    final rekeningSnapshot = await FirebaseFirestore.instance
+        .collection('rekening')
+        .where('id_user', isEqualTo: user.uid)
+        .get();
+    double total = 0.0;
+    List<Account> accounts = rekeningSnapshot.docs.map((doc) {
+      final data = doc.data();
+      total += (data['jumlah_saldo'] ?? 0).toDouble();
+      return Account(
+        id: doc.id,
+        name: data['nama_rekening'] ?? '',
+        balance: (data['jumlah_saldo'] ?? 0).toDouble(),
+        iconPath: data['iconPath'] ?? '',
+      );
+    }).toList();
+    setState(() {
+      _accounts = accounts;
+      _totalBalance = total;
+    });
+  }
+
   // Method untuk mengkonversi string iconPath menjadi IconData
   IconData _getIconFromPath(String iconPath) {
     switch (iconPath) {
@@ -73,8 +80,6 @@ class _HomeScreenState extends State<HomeScreen> {
         return Icons.account_balance_wallet;
     }
   }
-  
-
 
   // Widget untuk setiap tab
   Widget _buildRekeningTab() {
@@ -82,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final horizontalPadding = screenSize.width * 0.05;
     const Color primaryColor = Color(0xFF47663C);
     const Color lightGreenColor = Color(0xFF8FBC94);
-    
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,7 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          
+
           // Card Total Saldo
           Padding(
             padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
@@ -170,7 +175,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          
+
           // Section Rekening
           Padding(
             padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
@@ -189,14 +194,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.add_circle, color: Color(0xFF47663C)),
-                      onPressed: () {
-                        Navigator.push(
+                      icon: const Icon(
+                        Icons.add_circle,
+                        color: Color(0xFF47663C),
+                      ),
+                      onPressed: () async {
+                        await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => const AddAccountScreen(),
                           ),
                         );
+                        // Reload rekening setelah tambah
+                        _fetchUserAndAccounts();
                       },
                     ),
                   ],
@@ -257,7 +267,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          
+
           // Padding bawah untuk memberikan ruang
           const SizedBox(height: 24),
         ],
@@ -278,19 +288,17 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     const Color primaryColor = Color(0xFF47663C);
-    
+
     // List widget untuk setiap tab
     final List<Widget> pages = [
       _buildRekeningTab(),
       _buildTransaksiTab(),
       _buildLaporanTab(),
     ];
-    
+
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: pages[_currentIndex],
-      ),
+      body: SafeArea(child: pages[_currentIndex]),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         selectedItemColor: primaryColor,
@@ -303,10 +311,7 @@ class _HomeScreenState extends State<HomeScreen> {
           });
         },
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.wallet),
-            label: 'Rekening',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.wallet), label: 'Rekening'),
           BottomNavigationBarItem(
             icon: Icon(Icons.swap_horiz),
             label: 'Transaksi',
