@@ -4,12 +4,13 @@ import 'package:google_fonts/google_fonts.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
+  
+  static const Color greenColor = Color(0xFF47663C);
 
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final headerHeight = screenHeight * 0.28;
-    const Color greenColor = Color(0xFF47663C);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -76,9 +77,9 @@ class LoginScreen extends StatelessWidget {
                         color: Colors.black,
                         fontSize: 16,
                       ),
-                      decoration: const InputDecoration(
-                        // hintText: 'Value',
-                        border: UnderlineInputBorder(),
+                      decoration: InputDecoration(
+                        hintText: 'Value',
+                        border: const UnderlineInputBorder(),
                         focusedBorder: UnderlineInputBorder(
                           borderSide: BorderSide(color: greenColor),
                         ),
@@ -100,9 +101,9 @@ class LoginScreen extends StatelessWidget {
                         fontSize: 16,
                       ),
                       obscureText: true,
-                      decoration: const InputDecoration(
-                        // hintText: 'Value',
-                        border: UnderlineInputBorder(),
+                      decoration: InputDecoration(
+                        hintText: 'Value',
+                        border: const UnderlineInputBorder(),
                         focusedBorder: UnderlineInputBorder(
                           borderSide: BorderSide(color: greenColor),
                         ),
@@ -155,7 +156,7 @@ class LoginScreen extends StatelessWidget {
                   const TextSpan(text: "Don't have Account? "),
                   TextSpan(
                     text: 'Sign Up',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: greenColor,
                       fontWeight: FontWeight.bold,
                       decoration: TextDecoration.underline,

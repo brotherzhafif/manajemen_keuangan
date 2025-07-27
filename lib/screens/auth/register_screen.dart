@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -9,7 +10,34 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  bool _isChecked = true; // State for the checkbox
+  bool _isChecked = true;
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  Future<void> _register() async {
+    if (!_isChecked) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Setujui syarat & ketentuan')),
+      );
+      return;
+    }
+    setState(() => _isLoading = true);
+    try {
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+      Navigator.pushReplacementNamed(context, '/home');
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Registrasi gagal')));
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +57,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Added extra padding to the top to make space for the back button
                     const SizedBox(height: 50),
                     Text(
                       'FinTracker',
@@ -58,14 +85,79 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildTextField(label: 'Name'),
-                          const SizedBox(height: 20),
-                          _buildTextField(
-                            label: 'Email',
-                            type: TextInputType.emailAddress,
+                          const Text(
+                            'Name',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          TextField(
+                            controller: _nameController,
+                            decoration: const InputDecoration(
+                              hintText: 'Value',
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 10.0,
+                              ),
+                              border: UnderlineInputBorder(),
+                              focusedBorder: UnderlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Color(0xFF47663C),
+                                ),
+                              ),
+                            ),
                           ),
                           const SizedBox(height: 20),
-                          _buildTextField(label: 'Password', obscure: true),
+                          const Text(
+                            'Email',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          TextField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: const InputDecoration(
+                              hintText: 'Value',
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 10.0,
+                              ),
+                              border: UnderlineInputBorder(),
+                              focusedBorder: UnderlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Color(0xFF47663C),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          const Text(
+                            'Password',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          TextField(
+                            controller: _passwordController,
+                            obscureText: true,
+                            decoration: const InputDecoration(
+                              hintText: 'Value',
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 10.0,
+                              ),
+                              border: UnderlineInputBorder(),
+                              focusedBorder: UnderlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Color(0xFF47663C),
+                                ),
+                              ),
+                            ),
+                          ),
                           const SizedBox(height: 25),
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -115,7 +207,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
-                              onPressed: () {},
+                              onPressed: _isLoading ? null : _register,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: greenColor,
                                 padding: const EdgeInsets.symmetric(
@@ -125,13 +217,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                              child: const Text(
-                                'Register',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                ),
-                              ),
+                              child: _isLoading
+                                  ? const CircularProgressIndicator(
+                                      color: Colors.white,
+                                    )
+                                  : const Text(
+                                      'Register',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                      ),
+                                    ),
                             ),
                           ),
                         ],
@@ -141,7 +237,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
             ),
-            // Positioned back button at the top left
             Positioned(
               top: 10.0,
               left: 10.0,
@@ -178,14 +273,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
         TextField(
-          style: const TextStyle(
-            color: Colors.black,
-            fontSize: 16,
-          ),
           keyboardType: type,
           obscureText: obscure,
           decoration: const InputDecoration(
-            // hintText: 'Value',
+            hintText: 'Value',
             contentPadding: EdgeInsets.symmetric(vertical: 10.0),
             border: UnderlineInputBorder(),
             focusedBorder: UnderlineInputBorder(
