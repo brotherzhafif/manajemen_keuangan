@@ -108,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       'Welcome Back',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: Colors.black,
                       ),
                     ),
                     Text(
@@ -182,34 +182,13 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Rekening',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.add_circle,
-                        color: Color(0xFF47663C),
-                      ),
-                      onPressed: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const AddAccountScreen(),
-                          ),
-                        );
-                        // Reload rekening setelah tambah
-                        _fetchUserAndAccounts();
-                      },
-                    ),
-                  ],
+                Text(
+                  'Rekening',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 GridView.builder(
@@ -217,50 +196,59 @@ class _HomeScreenState extends State<HomeScreen> {
                   physics: const NeverScrollableScrollPhysics(),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    childAspectRatio: 1.5,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 1.2,
                   ),
                   itemCount: _accounts.length,
                   itemBuilder: (context, index) {
                     final account = _accounts[index];
                     return Card(
-                      elevation: 2,
+                      elevation: 3,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircleAvatar(
-                              backgroundColor: lightGreenColor,
-                              child: Icon(
-                                _getIconFromPath(account.iconPath),
-                                color: Colors.white,
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: lightGreenColor,
+                                radius: 25,
+                                child: Icon(
+                                  _getIconFromPath(account.iconPath),
+                                  color: Colors.white,
+                                  size: 30,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              account.name,
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black,
+                              const SizedBox(height: 6),
+                              Text(
+                                account.name,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            Text(
-                              currencyFormatter.format(account.balance),
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
+                              const SizedBox(height: 2),
+                              Text(
+                                currencyFormatter.format(account.balance),
+                                style: GoogleFonts.poppins(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
                     );
                   },
                 ),
@@ -322,6 +310,29 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+      floatingActionButton: _currentIndex == 0
+          ? FloatingActionButton.extended(
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AddAccountScreen(),
+                  ),
+                );
+                // Reload rekening setelah tambah
+                _fetchUserAndAccounts();
+              },
+              backgroundColor: primaryColor,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: Text(
+                 'Tambah Rekening',
+                 style: GoogleFonts.poppins(
+                   color: Colors.white,
+                   fontWeight: FontWeight.w500,
+                 ),
+               ),
+            )
+          : null,
     );
   }
 }
