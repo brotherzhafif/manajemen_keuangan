@@ -74,7 +74,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         borderRadius: BorderRadius.circular(15.0),
                         boxShadow: [
                           BoxShadow(
-                            // ignore: deprecated_member_use
                             color: Colors.grey.withOpacity(0.2),
                             spreadRadius: 4,
                             blurRadius: 10,
@@ -95,6 +94,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           TextField(
                             controller: _nameController,
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 16,
+                            ),
                             decoration: const InputDecoration(
                               hintText: 'Value',
                               contentPadding: EdgeInsets.symmetric(
@@ -119,6 +122,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           TextField(
                             controller: _emailController,
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 16,
+                            ),
                             keyboardType: TextInputType.emailAddress,
                             decoration: const InputDecoration(
                               hintText: 'Value',
@@ -144,6 +151,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           TextField(
                             controller: _passwordController,
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 16,
+                            ),
                             obscureText: true,
                             decoration: const InputDecoration(
                               hintText: 'Value',
@@ -253,38 +264,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildTextField({
-    required String label,
-    TextInputType type = TextInputType.text,
-    bool obscure = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.grey,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        TextField(
-          keyboardType: type,
-          obscureText: obscure,
-          decoration: const InputDecoration(
-            hintText: 'Value',
-            contentPadding: EdgeInsets.symmetric(vertical: 10.0),
-            border: UnderlineInputBorder(),
-            focusedBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: Color(0xFF47663C)),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

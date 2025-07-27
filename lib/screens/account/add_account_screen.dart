@@ -22,13 +22,7 @@ class _AddAccountScreenState extends State<AddAccountScreen> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      // UI-only: Tampilkan pesan sukses tanpa menambahkan data
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Rekening berhasil ditambahkan (UI Demo)'),
-          backgroundColor: Colors.green,
-        ),
-      );
+
       Navigator.pop(context);
     }
   }

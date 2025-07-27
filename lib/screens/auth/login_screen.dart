@@ -1,16 +1,42 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
-  
-  static const Color greenColor = Color(0xFF47663C);
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  Future<void> _signIn() async {
+    setState(() => _isLoading = true);
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+      Navigator.pushReplacementNamed(context, '/home');
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message ?? 'Login gagal')));
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final headerHeight = screenHeight * 0.28;
+    const Color greenColor = Color(0xFF47663C);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -54,7 +80,7 @@ class LoginScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(15.0),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey,
+                      color: Colors.grey.withOpacity(0.2),
                       spreadRadius: 4,
                       blurRadius: 10,
                       offset: const Offset(0, 3),
@@ -73,13 +99,14 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                     TextField(
+                      controller: _emailController,
                       style: const TextStyle(
                         color: Colors.black,
                         fontSize: 16,
                       ),
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         hintText: 'Value',
-                        border: const UnderlineInputBorder(),
+                        border: UnderlineInputBorder(),
                         focusedBorder: UnderlineInputBorder(
                           borderSide: BorderSide(color: greenColor),
                         ),
@@ -96,14 +123,15 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                     TextField(
+                      controller: _passwordController,
                       style: const TextStyle(
                         color: Colors.black,
                         fontSize: 16,
                       ),
                       obscureText: true,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         hintText: 'Value',
-                        border: const UnderlineInputBorder(),
+                        border: UnderlineInputBorder(),
                         focusedBorder: UnderlineInputBorder(
                           borderSide: BorderSide(color: greenColor),
                         ),
@@ -113,10 +141,7 @@ class LoginScreen extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () {
-                          // Navigasi ke halaman beranda saat tombol Sign In ditekan
-                          Navigator.pushReplacementNamed(context, '/home');
-                        },
+                        onPressed: _isLoading ? null : _signIn,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: greenColor,
                           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -124,10 +149,17 @@ class LoginScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: const Text(
-                          'Sign In',
-                          style: TextStyle(color: Colors.white, fontSize: 18),
-                        ),
+                        child: _isLoading
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                            : const Text(
+                                'Sign In',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                ),
+                              ),
                       ),
                     ),
                     const SizedBox(height: 15),
@@ -156,16 +188,15 @@ class LoginScreen extends StatelessWidget {
                   const TextSpan(text: "Don't have Account? "),
                   TextSpan(
                     text: 'Sign Up',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: greenColor,
                       fontWeight: FontWeight.bold,
                       decoration: TextDecoration.underline,
                     ),
-                    recognizer:
-                        TapGestureRecognizer()
-                          ..onTap = () {
-                            Navigator.pushNamed(context, '/register');
-                          },
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () {
+                        Navigator.pushNamed(context, '/register');
+                      },
                   ),
                 ],
               ),
