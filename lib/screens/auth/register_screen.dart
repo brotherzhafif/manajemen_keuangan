@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -25,10 +26,59 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
     setState(() => _isLoading = true);
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+      UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
+      final user = userCredential.user;
+      if (user != null) {
+        // Simpan data user ke koleksi 'users'
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+          'id_user': user.uid,
+          'username': _emailController.text.trim(),
+          'email': _emailController.text.trim(),
+          'firstname': _nameController.text.trim(),
+          'lastname': '',
+        });
+
+        // Buat 4 rekening default
+        final rekeningTypes = [
+          {
+            'jenis': 'kebutuhan',
+            'nama_rekening': 'Kebutuhan',
+            'iconPath': 'Icons.coffee',
+          },
+          {
+            'jenis': 'keinginan',
+            'nama_rekening': 'Keinginan',
+            'iconPath': 'Icons.shopping_cart',
+          },
+          {
+            'jenis': 'investasi',
+            'nama_rekening': 'Investasi',
+            'iconPath': 'Icons.trending_up',
+          },
+          {
+            'jenis': 'tabungan',
+            'nama_rekening': 'Tabungan',
+            'iconPath': 'Icons.credit_card',
+            'target': null,
+          },
+        ];
+        for (var rekening in rekeningTypes) {
+          await FirebaseFirestore.instance.collection('rekening').add({
+            'id_user': user.uid,
+            'jenis': rekening['jenis'],
+            'nama_rekening': rekening['nama_rekening'],
+            'iconPath': rekening['iconPath'],
+            'target': rekening['jenis'] == 'tabungan'
+                ? rekening['target']
+                : null,
+            'jumlah_saldo': 0,
+          });
+        }
+      }
       Navigator.pushReplacementNamed(context, '/home');
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(
