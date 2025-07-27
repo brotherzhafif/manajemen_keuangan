@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-
-import '../budget/budget_detail_screen.dart';
-import '../profile/profile_screen.dart';
+import '../../models/account_model.dart';
+import '../account/add_account_screen.dart';
+import '../transaction/add_transaction_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,7 +15,35 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
   final String _userName = "Taufik Kurniawan";
-  final double _totalBalance = 3900000.00;
+  final double _totalBalance = 3500000.00; // Total saldo tetap untuk UI
+  
+  // Data untuk rekening (menggunakan kategori anggaran)
+  final List<Account> _accounts = [
+    Account(
+      id: '1',
+      name: 'Kebutuhan',
+      balance: 2000000.00,
+      iconPath: 'Icons.coffee',
+    ),
+    Account(
+      id: '2',
+      name: 'Keinginan',
+      balance: 500000.00,
+      iconPath: 'Icons.shopping_cart',
+    ),
+    Account(
+      id: '3',
+      name: 'Investasi',
+      balance: 800000.00,
+      iconPath: 'Icons.trending_up',
+    ),
+    Account(
+      id: '4',
+      name: 'Tabungan',
+      balance: 200000.00,
+      iconPath: 'Icons.credit_card',
+    ),
+  ];
   
   // Format currency
   final NumberFormat currencyFormatter = NumberFormat.currency(
@@ -24,212 +52,302 @@ class _HomeScreenState extends State<HomeScreen> {
     decimalDigits: 2,
   );
   
-  // Data untuk kategori anggaran
-  final List<Map<String, dynamic>> _budgetCategories = [
-    {
-      'name': 'Kebutuhan',
-      'icon': Icons.coffee,
-      'amount': 2000000.00,
-    },
-    {
-      'name': 'Keinginan',
-      'icon': Icons.shopping_cart,
-      'amount': 500000.00,
-    },
-    {
-      'name': 'Investasi',
-      'icon': Icons.trending_up,
-      'amount': 800000.00,
-    },
-    {
-      'name': 'Tabungan',
-      'icon': Icons.credit_card,
-      'amount': 200000.00,
-    },
-  ];
-
   @override
-  Widget build(BuildContext context) {
-    // Mendapatkan ukuran layar untuk responsivitas
+  void initState() {
+    super.initState();
+  }
+  
+  // Method untuk mengkonversi string iconPath menjadi IconData
+  IconData _getIconFromPath(String iconPath) {
+    switch (iconPath) {
+      case 'Icons.coffee':
+        return Icons.coffee;
+      case 'Icons.shopping_cart':
+        return Icons.shopping_cart;
+      case 'Icons.trending_up':
+        return Icons.trending_up;
+      case 'Icons.credit_card':
+        return Icons.credit_card;
+      default:
+        return Icons.account_balance_wallet;
+    }
+  }
+  
+
+
+  // Widget untuk setiap tab
+  Widget _buildRekeningTab() {
     final screenSize = MediaQuery.of(context).size;
-    final horizontalPadding = screenSize.width * 0.05; // 5% dari lebar layar
-    
-    // Warna yang digunakan
+    final horizontalPadding = screenSize.width * 0.05;
     const Color primaryColor = Color(0xFF47663C);
     const Color lightGreenColor = Color(0xFF8FBC94);
     
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header dengan welcome text dan avatar
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: horizontalPadding,
-                  vertical: 16,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header dengan welcome text dan avatar
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: horizontalPadding,
+              vertical: 16,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Welcome Back',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        Text(
-                          _userName,
-                          style: GoogleFonts.poppins(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      'Welcome Back',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
                     ),
-                    GestureDetector(
-                      onTap: () {
-                        // Navigasi ke halaman profil
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ProfileScreen(),
-                          ),
-                        );
-                      },
-                      child: CircleAvatar(
-                        radius: 24,
-                        backgroundColor: lightGreenColor,
-                        child: const Icon(
-                          Icons.person,
-                          color: Colors.white,
-                          size: 28,
-                        ),
+                    Text(
+                      _userName,
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
                       ),
                     ),
                   ],
                 ),
-              ),
-              
-              // Card Total Saldo
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  margin: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    color: primaryColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Total Saldo',
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        currencyFormatter.format(_totalBalance),
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+                GestureDetector(
+                  onTap: () {
+                    // Navigasi ke halaman profil
+                    // Navigator.pushNamed(context, '/profile');
+                  },
+                  child: CircleAvatar(
+                    radius: 24,
+                    backgroundColor: const Color(0xFF47663C),
+                    child: const Icon(
+                      Icons.person,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                   ),
                 ),
+              ],
+            ),
+          ),
+          
+          // Card Total Saldo
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                color: primaryColor,
+                borderRadius: BorderRadius.circular(12),
               ),
-              
-              // Section Anggaran
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Total Saldo',
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    currencyFormatter.format(_totalBalance),
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // Section Rekening
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Anggaran',
+                      'Rekening',
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
+                        color: Colors.black,
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Card(
+                    IconButton(
+                      icon: const Icon(Icons.add_circle, color: Color(0xFF47663C)),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AddAccountScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 1.5,
+                  ),
+                  itemCount: _accounts.length,
+                  itemBuilder: (context, index) {
+                    final account = _accounts[index];
+                    return Card(
                       elevation: 2,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _budgetCategories.length,
-                          separatorBuilder: (context, index) => const Divider(height: 1),
-                          itemBuilder: (context, index) {
-                            final category = _budgetCategories[index];
-                            return ListTile(
-                              contentPadding: EdgeInsets.zero,
-                              leading: CircleAvatar(
-                                backgroundColor: lightGreenColor,
-                                child: Icon(
-                                  category['icon'],
-                                  color: Colors.white,
-                                ),
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: lightGreenColor,
+                              child: Icon(
+                                _getIconFromPath(account.iconPath),
+                                color: Colors.white,
                               ),
-                              title: Text(
-                                'Saldo ${category['name']}',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              account.name,
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black,
                               ),
-                              trailing: Text(
-                                currencyFormatter.format(category['amount']),
-                                style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            ),
+                            Text(
+                              currencyFormatter.format(account.balance),
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
                               ),
-                              onTap: () {
-                                // Navigasi ke halaman detail kategori
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => BudgetDetailScreen(
-                                      category: category,
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
-              ),
-              
-              // Padding bawah untuk memberikan ruang
-              const SizedBox(height: 24),
-            ],
+              ],
+            ),
           ),
+          
+          // Padding bawah untuk memberikan ruang
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  // Widget untuk tab transaksi
+  Widget _buildTransaksiTab() {
+    return const AddTransactionScreen();
+  }
+
+  // Widget untuk tab laporan
+  Widget _buildLaporanTab() {
+    final screenSize = MediaQuery.of(context).size;
+    final horizontalPadding = screenSize.width * 0.05;
+    
+    return SingleChildScrollView(
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: horizontalPadding,
+          vertical: 16,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Laporan Keuangan',
+              style: GoogleFonts.poppins(
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.bar_chart,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Fitur Laporan',
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Akan segera hadir',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
-      
-      // Bottom Navigation Bar
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const Color primaryColor = Color(0xFF47663C);
+    
+    // List widget untuk setiap tab
+    final List<Widget> pages = [
+      _buildRekeningTab(),
+      _buildTransaksiTab(),
+      _buildLaporanTab(),
+    ];
+    
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: pages[_currentIndex],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         selectedItemColor: primaryColor,
@@ -243,24 +361,16 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
+            icon: Icon(Icons.wallet),
+            label: 'Rekening',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance),
-            label: 'Tabungan',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle_outline),
-            label: 'Tambah',
+            icon: Icon(Icons.swap_horiz),
+            label: 'Transaksi',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.bar_chart),
             label: 'Laporan',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Setting',
           ),
         ],
       ),
