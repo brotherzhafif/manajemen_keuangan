@@ -11,9 +11,9 @@ class BudgetDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // Format currency
     final NumberFormat currencyFormatter = NumberFormat.currency(
-      locale: 'id_ID',
-      symbol: 'Rp ',
-      decimalDigits: 2,
+     locale: 'en_US',
+       symbol: 'Rp ',
+       decimalDigits: 0,
     );
     
     // Warna yang digunakan

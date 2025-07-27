@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../account/add_account_screen.dart';
+import '../account/account_detail_screen.dart';
 import '../transaction/add_transaction_screen.dart';
 import '../report/report_screen.dart';
 import '../../models/account_model.dart';
@@ -18,12 +19,11 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
   String _userName = "";
-  double _totalBalance = 0.0;
   List<Account> _accounts = [];
   final NumberFormat currencyFormatter = NumberFormat.currency(
-    locale: 'id_ID',
+    locale: 'en_US',
     symbol: 'Rp ',
-    decimalDigits: 2,
+    decimalDigits: 0,
   );
 
   @override
@@ -35,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _fetchUserAndAccounts() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
+    
     // Ambil nama user
     final userDoc = await FirebaseFirestore.instance
         .collection('users')
@@ -43,25 +44,55 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _userName = userDoc.data()?['firstname'] ?? '';
     });
+    
     // Ambil rekening user
     final rekeningSnapshot = await FirebaseFirestore.instance
         .collection('rekening')
         .where('id_user', isEqualTo: user.uid)
         .get();
-    double total = 0.0;
+    
+    // Ambil semua transaksi user untuk kalkulasi saldo real-time
+    final transactionsSnapshot = await FirebaseFirestore.instance
+        .collection('transactions')
+        .where('user_id', isEqualTo: user.uid)
+        .get();
+    
+    // Hitung saldo per rekening berdasarkan transaksi
+    Map<String, double> accountBalances = {};
+    
+    for (var transactionDoc in transactionsSnapshot.docs) {
+      final transactionData = transactionDoc.data();
+      final kategori = transactionData['kategori'] as String;
+      final total = (transactionData['total'] ?? 0).toDouble();
+      final jenis = transactionData['jenis'] as String;
+      
+      if (!accountBalances.containsKey(kategori)) {
+        accountBalances[kategori] = 0.0;
+      }
+      
+      if (jenis == 'masuk') {
+        accountBalances[kategori] = accountBalances[kategori]! + total;
+      } else {
+        accountBalances[kategori] = accountBalances[kategori]! - total;
+      }
+    }
+    
     List<Account> accounts = rekeningSnapshot.docs.map((doc) {
       final data = doc.data();
-      total += (data['jumlah_saldo'] ?? 0).toDouble();
+      final accountName = data['nama_rekening'] ?? '';
+      final calculatedBalance = accountBalances[accountName] ?? 0.0;
+      
+      
       return Account(
         id: doc.id,
-        name: data['nama_rekening'] ?? '',
-        balance: (data['jumlah_saldo'] ?? 0).toDouble(),
+        name: accountName,
+        balance: calculatedBalance,
         iconPath: data['iconPath'] ?? '',
       );
     }).toList();
+    
     setState(() {
       _accounts = accounts;
-      _totalBalance = total;
     });
   }
 
@@ -163,13 +194,48 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    currencyFormatter.format(_totalBalance),
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('transactions')
+                        .where('user_id', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      double totalBalance = 0.0;
+                      
+                      if (snapshot.hasData && _accounts.isNotEmpty) {
+                        Map<String, double> accountBalances = {};
+                        
+                        for (var transactionDoc in snapshot.data!.docs) {
+                          final transactionData = transactionDoc.data() as Map<String, dynamic>;
+                          final kategori = transactionData['kategori'] as String;
+                          final total = (transactionData['total'] ?? 0).toDouble();
+                          final jenis = transactionData['jenis'] as String;
+                          
+                          if (!accountBalances.containsKey(kategori)) {
+                            accountBalances[kategori] = 0.0;
+                          }
+                          
+                          if (jenis == 'masuk') {
+                            accountBalances[kategori] = accountBalances[kategori]! + total;
+                          } else {
+                            accountBalances[kategori] = accountBalances[kategori]! - total;
+                          }
+                        }
+                        
+                        for (var account in _accounts) {
+                          totalBalance += accountBalances[account.name] ?? 0.0;
+                        }
+                      }
+                      
+                      return Text(
+                        currencyFormatter.format(totalBalance),
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -203,52 +269,87 @@ class _HomeScreenState extends State<HomeScreen> {
                   itemCount: _accounts.length,
                   itemBuilder: (context, index) {
                     final account = _accounts[index];
-                    return Card(
-                      elevation: 3,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              CircleAvatar(
-                                backgroundColor: lightGreenColor,
-                                radius: 25,
-                                child: Icon(
-                                  _getIconFromPath(account.iconPath),
-                                  color: Colors.white,
-                                  size: 30,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                account.name,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black,
-                                ),
-                                textAlign: TextAlign.center,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                currencyFormatter.format(account.balance),
-                                style: GoogleFonts.poppins(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
-                                textAlign: TextAlign.center,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AccountDetailScreen(account: account),
                           ),
+                        );
+                      },
+                      child: Card(
+                        elevation: 3,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
                         ),
+                        child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: lightGreenColor,
+                                  radius: 25,
+                                  child: Icon(
+                                    _getIconFromPath(account.iconPath),
+                                    color: Colors.white,
+                                    size: 30,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  account.name,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                StreamBuilder<QuerySnapshot>(
+                                  stream: FirebaseFirestore.instance
+                                      .collection('transactions')
+                                      .where('user_id', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                                      .where('kategori', isEqualTo: account.name)
+                                      .snapshots(),
+                                  builder: (context, snapshot) {
+                                    double accountBalance = 0.0;
+                                    
+                                    if (snapshot.hasData) {
+                                      for (var doc in snapshot.data!.docs) {
+                                        final data = doc.data() as Map<String, dynamic>;
+                                        final total = (data['total'] ?? 0).toDouble();
+                                        final jenis = data['jenis'] as String;
+                                        
+                                        if (jenis == 'masuk') {
+                                          accountBalance += total;
+                                        } else {
+                                          accountBalance -= total;
+                                        }
+                                      }
+                                    }
+                                    
+                                    return Text(
+                                      currencyFormatter.format(accountBalance),
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                      ),
                     );
                   },
                 ),

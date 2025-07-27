@@ -13,8 +13,9 @@ class ReportScreen extends StatefulWidget {
 class _ReportScreenState extends State<ReportScreen> {
   bool isMonthlySelected = true;
   final NumberFormat currencyFormatter = NumberFormat.currency(
-    locale: 'id_ID',
+    locale: 'en_US',
     symbol: 'Rp ',
+    decimalDigits: 0,
   );
 
   // Dummy data untuk charts

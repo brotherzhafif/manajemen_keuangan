@@ -4,7 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AddTransactionScreen extends StatefulWidget {
-  const AddTransactionScreen({super.key});
+  final String? preSelectedKategori;
+  
+  const AddTransactionScreen({super.key, this.preSelectedKategori});
 
   @override
   State<AddTransactionScreen> createState() => _AddTransactionScreenState();
@@ -18,6 +20,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   String? _selectedKategori;
   DateTime? _selectedDate;
   String _jenisTransaksi = 'masuk';
+  
+  @override
+  void initState() {
+    super.initState();
+    // Set kategori yang sudah dipilih jika ada
+    if (widget.preSelectedKategori != null) {
+      _selectedKategori = widget.preSelectedKategori;
+    }
+  }
   
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;  @override
