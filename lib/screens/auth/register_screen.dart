@@ -144,6 +144,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           TextField(
                             controller: _nameController,
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 16,
+                            ),
                             decoration: const InputDecoration(
                               hintText: 'Value',
                               contentPadding: EdgeInsets.symmetric(
@@ -168,6 +172,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           TextField(
                             controller: _emailController,
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 16,
+                            ),
                             keyboardType: TextInputType.emailAddress,
                             decoration: const InputDecoration(
                               hintText: 'Value',
@@ -193,6 +201,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           TextField(
                             controller: _passwordController,
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 16,
+                            ),
                             obscureText: true,
                             decoration: const InputDecoration(
                               hintText: 'Value',

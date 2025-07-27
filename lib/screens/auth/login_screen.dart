@@ -100,6 +100,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     TextField(
                       controller: _emailController,
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 16,
+                      ),
                       decoration: const InputDecoration(
                         hintText: 'Value',
                         border: UnderlineInputBorder(),
@@ -120,6 +124,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     TextField(
                       controller: _passwordController,
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 16,
+                      ),
                       obscureText: true,
                       decoration: const InputDecoration(
                         hintText: 'Value',
