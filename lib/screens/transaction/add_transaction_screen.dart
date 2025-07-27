@@ -23,14 +23,24 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   void _submitForm() {
-    // UI-only: Tampilkan pesan sukses tanpa validasi atau penyimpanan data
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Transaksi berhasil ditambahkan (UI Demo)'),
-        backgroundColor: Colors.green,
-      ),
-    );
-    Navigator.pop(context);
+    // TODO: Implementasi penyimpanan data transaksi ke Firebase
+    // Untuk sementara, reset form setelah submit
+    // _totalController.clear();
+    // _kategoriController.clear();
+    // _hariTanggalController.clear();
+    // _keteranganController.clear();
+    
+    // Tampilkan feedback bahwa form telah di-reset
+    // ScaffoldMessenger.of(context).showSnackBar(
+    //   SnackBar(
+    //     content: Text(
+    //       'Form berhasil di-reset',
+    //       style: GoogleFonts.poppins(),
+    //     ),
+    //     backgroundColor: const Color(0xFF47663C),
+    //     duration: const Duration(seconds: 2),
+    //   ),
+    // );
   }
 
   @override

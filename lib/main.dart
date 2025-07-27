@@ -36,7 +36,7 @@ class MyApp extends StatelessWidget {
         ),
       ),
       // Set the initial route and define all routes
-      initialRoute: '/home', // Mengubah rute awal ke halaman beranda
+      initialRoute: '/', // Mengubah rute awal ke halaman login
       routes: {
         '/': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
