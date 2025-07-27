@@ -38,6 +38,7 @@ dependencies:
   intl: ^0.19.0 # Untuk format currency
   firebase_core: ^2.30.0
   cloud_firestore: ^4.17.0
+  firebase_auth: ^4.19.0
   fl_chart: ^0.68.0 # Untuk pie chart dan line chart
 
 dev_dependencies:
