@@ -47,6 +47,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         borderRadius: BorderRadius.circular(15.0),
                         boxShadow: [
                           BoxShadow(
+                            // ignore: deprecated_member_use
                             color: Colors.grey.withOpacity(0.2),
                             spreadRadius: 4,
                             blurRadius: 10,
@@ -177,10 +178,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
         TextField(
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 16,
+          ),
           keyboardType: type,
           obscureText: obscure,
           decoration: const InputDecoration(
-            hintText: 'Value',
+            // hintText: 'Value',
             contentPadding: EdgeInsets.symmetric(vertical: 10.0),
             border: UnderlineInputBorder(),
             focusedBorder: UnderlineInputBorder(

@@ -71,9 +71,13 @@ class LoginScreen extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Value',
+                    TextField(
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 16,
+                      ),
+                      decoration: const InputDecoration(
+                        // hintText: 'Value',
                         border: UnderlineInputBorder(),
                         focusedBorder: UnderlineInputBorder(
                           borderSide: BorderSide(color: greenColor),
@@ -90,10 +94,14 @@ class LoginScreen extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const TextField(
+                    TextField(
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 16,
+                      ),
                       obscureText: true,
-                      decoration: InputDecoration(
-                        hintText: 'Value',
+                      decoration: const InputDecoration(
+                        // hintText: 'Value',
                         border: UnderlineInputBorder(),
                         focusedBorder: UnderlineInputBorder(
                           borderSide: BorderSide(color: greenColor),
