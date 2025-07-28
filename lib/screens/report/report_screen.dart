@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ReportScreen extends StatefulWidget {
   const ReportScreen({super.key});
@@ -13,65 +14,207 @@ class ReportScreen extends StatefulWidget {
 
 class _ReportScreenState extends State<ReportScreen> {
   bool isMonthlySelected = true;
+  int selectedYear = DateTime.now().year;
   final NumberFormat currencyFormatter = NumberFormat.currency(
     locale: 'en_US',
     symbol: 'Rp ',
     decimalDigits: 0,
   );
 
-  // Dummy data untuk charts
-  final List<PieChartSectionData> pieData = [
-    PieChartSectionData(
-      value: 80,
-      color: const Color(0xFF2196F3),
-      title: '80%',
-      titleStyle: const TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.bold,
+  List<Map<String, dynamic>> transactions = [];
+  double totalMasuk = 0;
+  double totalKeluar = 0;
+  List<FlSpot> pemasukanData = [];
+  List<FlSpot> pengeluaranData = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchTransactions();
+  }
+
+  Future<void> _fetchTransactions() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('transactions')
+        .where('user_id', isEqualTo: user.uid)
+        .get();
+
+    transactions = snapshot.docs.map((doc) {
+      final data = doc.data();
+      return {
+        'title': data['keterangan'] ?? '',
+        'jenis': data['jenis'] ?? '',
+        'amount': (data['total'] ?? 0).toDouble(),
+        'date': (data['tanggal'] as Timestamp).toDate(),
+      };
+    }).toList();
+
+    _processData();
+    setState(() {});
+  }
+
+  void _processData() {
+    totalMasuk = 0;
+    totalKeluar = 0;
+    pemasukanData = [];
+    pengeluaranData = [];
+    Map<int, double> monthlyMasuk = {};
+    Map<int, double> monthlyKeluar = {};
+    Map<int, double> yearlyMasuk = {};
+    Map<int, double> yearlyKeluar = {};
+    Set<int> tahunSet = {};
+    for (var tx in transactions) {
+      final jenis = tx['jenis'] ?? '';
+      final amount = (tx['amount'] ?? 0).toDouble();
+      final date = tx['date'] is DateTime
+          ? tx['date'] as DateTime
+          : DateTime.now();
+      final month = date.month;
+      final year = date.year;
+      if (isMonthlySelected) {
+        if (year == selectedYear) {
+          if (jenis == 'masuk') {
+            totalMasuk += amount;
+            monthlyMasuk[month] = (monthlyMasuk[month] ?? 0) + amount;
+          } else if (jenis == 'keluar') {
+            totalKeluar += amount;
+            monthlyKeluar[month] = (monthlyKeluar[month] ?? 0) + amount;
+          }
+        }
+      } else {
+        tahunSet.add(year);
+        if (jenis == 'masuk') {
+          totalMasuk += amount;
+          yearlyMasuk[year] = (yearlyMasuk[year] ?? 0) + amount;
+        } else if (jenis == 'keluar') {
+          totalKeluar += amount;
+          yearlyKeluar[year] = (yearlyKeluar[year] ?? 0) + amount;
+        }
+      }
+    }
+    if (isMonthlySelected) {
+      for (int i = 1; i <= 12; i++) {
+        pemasukanData.add(FlSpot(i.toDouble(), monthlyMasuk[i] ?? 0));
+        pengeluaranData.add(FlSpot(i.toDouble(), monthlyKeluar[i] ?? 0));
+      }
+    } else {
+      final tahunList = tahunSet.toList()..sort();
+      for (var tahun in tahunList) {
+        pemasukanData.add(FlSpot(tahun.toDouble(), yearlyMasuk[tahun] ?? 0));
+        pengeluaranData.add(FlSpot(tahun.toDouble(), yearlyKeluar[tahun] ?? 0));
+      }
+    }
+  }
+
+  List<PieChartSectionData> get pieData {
+    final total = totalMasuk + totalKeluar;
+    final masukPercent = total == 0 ? 0 : (totalMasuk / total) * 100;
+    final keluarPercent = total == 0 ? 0 : (totalKeluar / total) * 100;
+    return [
+      PieChartSectionData(
+        value: masukPercent.toDouble(),
+        color: const Color(0xFF2196F3),
+        title: '${masukPercent.toStringAsFixed(0)}%',
+        titleStyle: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),
+        radius: 60,
       ),
-      radius: 60,
-    ),
-    PieChartSectionData(
-      value: 20,
-      color: const Color(0xFFF44336),
-      title: '20%',
-      titleStyle: const TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.bold,
+      PieChartSectionData(
+        value: keluarPercent.toDouble(),
+        color: const Color(0xFFF44336),
+        title: '${keluarPercent.toStringAsFixed(0)}%',
+        titleStyle: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),
+        radius: 60,
       ),
-      radius: 60,
-    ),
-  ];
-
-  final List<FlSpot> pemasukanData = [
-    const FlSpot(1, 2000000),
-    const FlSpot(2, 2500000),
-    const FlSpot(3, 3000000),
-    const FlSpot(4, 2800000),
-    const FlSpot(5, 3200000),
-    const FlSpot(6, 3500000),
-  ];
-
-  final List<FlSpot> pengeluaranData = [
-    const FlSpot(1, 1500000),
-    const FlSpot(2, 1800000),
-    const FlSpot(3, 2000000),
-    const FlSpot(4, 1700000),
-    const FlSpot(5, 1900000),
-    const FlSpot(6, 2100000),
-  ];
-
-  final List<Map<String, dynamic>> dummyTransactions = [
-    {'title': 'Beli Buku', 'amount': 50000, 'type': 'expense'},
-    {'title': 'Gaji Bulanan', 'amount': 3000000, 'type': 'income'},
-    {'title': 'Belanja Bulanan', 'amount': 150000, 'type': 'expense'},
-  ];
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
     const Color primaryColor = Color(0xFF47663C);
     final screenSize = MediaQuery.of(context).size;
     final horizontalPadding = screenSize.width * 0.05;
+
+    // Filter controls
+    Widget filterControls = Row(
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isMonthlySelected
+                  ? primaryColor
+                  : Colors.grey[300],
+              foregroundColor: isMonthlySelected ? Colors.white : Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () {
+              setState(() {
+                isMonthlySelected = true;
+                _processData();
+              });
+            },
+            child: const Text('Bulanan'),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: !isMonthlySelected
+                  ? primaryColor
+                  : Colors.grey[300],
+              foregroundColor: !isMonthlySelected ? Colors.white : Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () {
+              setState(() {
+                isMonthlySelected = false;
+                _processData();
+              });
+            },
+            child: const Text('Tahunan'),
+          ),
+        ),
+        if (isMonthlySelected) ...[
+          const SizedBox(width: 8),
+          DropdownButton<int>(
+            value: selectedYear,
+            items: List.generate(5, (i) {
+              int year = DateTime.now().year - i;
+              return DropdownMenuItem(
+                value: year,
+                child: Text(
+                  year.toString(),
+                  style: const TextStyle(color: Colors.black),
+                ),
+              );
+            }),
+            onChanged: (val) {
+              if (val != null) {
+                setState(() {
+                  selectedYear = val;
+                  _processData();
+                });
+              }
+            },
+            dropdownColor: Colors.white,
+            style: const TextStyle(color: Colors.black),
+          ),
+        ],
+      ],
+    );
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -85,132 +228,8 @@ class _ReportScreenState extends State<ReportScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header Section
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Laporan',
-                      style: GoogleFonts.poppins(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                      ),
-                    ),
-                    PopupMenuButton<String>(
-                      icon: const CircleAvatar(
-                        radius: 24,
-                        backgroundColor: Color(0xFF47663C),
-                        child: Icon(
-                          Icons.person,
-                          color: Colors.white,
-                          size: 28,
-                        ),
-                      ),
-                      onSelected: (value) async {
-                        if (value == 'profile') {
-                          Navigator.pushNamed(context, '/profile');
-                        } else if (value == 'logout') {
-                          await FirebaseAuth.instance.signOut();
-                          Navigator.pushReplacementNamed(context, '/');
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: 'profile',
-                          child: Text('Profil'),
-                        ),
-                        const PopupMenuItem(
-                          value: 'logout',
-                          child: Text('Logout'),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // Filter Toggle Buttons
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              isMonthlySelected = true;
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              color: isMonthlySelected
-                                  ? primaryColor
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              'Bulanan',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.poppins(
-                                color: isMonthlySelected
-                                    ? Colors.white
-                                    : Colors.grey[600],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              isMonthlySelected = false;
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              color: !isMonthlySelected
-                                  ? primaryColor
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              'Tahunan',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.poppins(
-                                color: !isMonthlySelected
-                                    ? Colors.white
-                                    : Colors.grey[600],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                filterControls,
                 const SizedBox(height: 16),
-
-                // Period Indicator
-                Text(
-                  'Periode : Desember 2024',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey[700],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
                 // Pie Chart Section
                 Container(
                   width: double.infinity,
@@ -249,52 +268,7 @@ class _ReportScreenState extends State<ReportScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      // Legend
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 16,
-                                height: 16,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF2196F3),
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Pemasukan',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Container(
-                                width: 16,
-                                height: 16,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFF44336),
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Pengeluaran',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                      // ...existing code...
                     ],
                   ),
                 ),
@@ -319,7 +293,7 @@ class _ReportScreenState extends State<ReportScreen> {
                   child: Column(
                     children: [
                       Text(
-                        'Trend Bulanan',
+                        isMonthlySelected ? 'Trend Bulanan' : 'Trend Tahunan',
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -328,209 +302,182 @@ class _ReportScreenState extends State<ReportScreen> {
                       ),
                       const SizedBox(height: 20),
                       SizedBox(
-                        height: 200,
-                        child: LineChart(
-                          LineChartData(
-                            gridData: FlGridData(
-                              show: true,
-                              drawVerticalLine: true,
-                              horizontalInterval: 500000,
-                              verticalInterval: 1,
-                              getDrawingHorizontalLine: (value) {
-                                return FlLine(
-                                  color: Colors.grey[300]!,
-                                  strokeWidth: 1,
-                                );
-                              },
-                              getDrawingVerticalLine: (value) {
-                                return FlLine(
-                                  color: Colors.grey[300]!,
-                                  strokeWidth: 1,
-                                );
-                              },
-                            ),
-                            titlesData: FlTitlesData(
-                              show: true,
-                              rightTitles: const AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              topTitles: const AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  reservedSize: 30,
-                                  interval: 1,
-                                  getTitlesWidget:
-                                      (double value, TitleMeta meta) {
-                                        const style = TextStyle(
-                                          color: Colors.grey,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                        );
-                                        Widget text;
-                                        switch (value.toInt()) {
-                                          case 1:
-                                            text = const Text(
-                                              'Jul',
-                                              style: style,
-                                            );
-                                            break;
-                                          case 2:
-                                            text = const Text(
-                                              'Agu',
-                                              style: style,
-                                            );
-                                            break;
-                                          case 3:
-                                            text = const Text(
-                                              'Sep',
-                                              style: style,
-                                            );
-                                            break;
-                                          case 4:
-                                            text = const Text(
-                                              'Okt',
-                                              style: style,
-                                            );
-                                            break;
-                                          case 5:
-                                            text = const Text(
-                                              'Nov',
-                                              style: style,
-                                            );
-                                            break;
-                                          case 6:
-                                            text = const Text(
-                                              'Des',
-                                              style: style,
-                                            );
-                                            break;
-                                          default:
-                                            text = const Text('', style: style);
-                                            break;
-                                        }
-                                        return SideTitleWidget(
-                                          axisSide: meta.axisSide,
-                                          child: text,
-                                        );
-                                      },
+                        height: 320,
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: SizedBox(
+                            width: isMonthlySelected ? 600 : 400,
+                            child: LineChart(
+                              LineChartData(
+                                gridData: FlGridData(
+                                  show: true,
+                                  drawVerticalLine: true,
+                                  horizontalInterval: isMonthlySelected
+                                      ? ((totalMasuk > totalKeluar
+                                                    ? totalMasuk
+                                                    : totalKeluar) /
+                                                10)
+                                            .ceilToDouble()
+                                      : ((totalMasuk > totalKeluar
+                                                    ? totalMasuk
+                                                    : totalKeluar) /
+                                                10)
+                                            .ceilToDouble(),
+                                  verticalInterval: 1,
+                                  getDrawingHorizontalLine: (value) {
+                                    return FlLine(
+                                      color: Colors.grey[300]!,
+                                      strokeWidth: 1,
+                                    );
+                                  },
+                                  getDrawingVerticalLine: (value) {
+                                    return FlLine(
+                                      color: Colors.grey[300]!,
+                                      strokeWidth: 1,
+                                    );
+                                  },
                                 ),
-                              ),
-                              leftTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  interval: 1000000,
-                                  getTitlesWidget:
-                                      (double value, TitleMeta meta) {
+                                titlesData: FlTitlesData(
+                                  show: true,
+                                  rightTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                  topTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                  bottomTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      reservedSize: 30,
+                                      interval: 1,
+                                      getTitlesWidget:
+                                          (double value, TitleMeta meta) {
+                                            Widget text;
+                                            const labelStyle = TextStyle(
+                                              color: Colors.black,
+                                              fontSize: 12,
+                                            );
+                                            if (isMonthlySelected) {
+                                              const monthNames = [
+                                                '',
+                                                'Jan',
+                                                'Feb',
+                                                'Mar',
+                                                'Apr',
+                                                'Mei',
+                                                'Jun',
+                                                'Jul',
+                                                'Agu',
+                                                'Sep',
+                                                'Okt',
+                                                'Nov',
+                                                'Des',
+                                              ];
+                                              int monthIdx = value.toInt();
+                                              text = Text(
+                                                monthIdx >= 1 && monthIdx <= 12
+                                                    ? monthNames[monthIdx]
+                                                    : '',
+                                                style: labelStyle,
+                                              );
+                                            } else {
+                                              text = Text(
+                                                value.toInt().toString(),
+                                                style: labelStyle,
+                                              );
+                                            }
+                                            return SideTitleWidget(
+                                              axisSide: meta.axisSide,
+                                              child: text,
+                                            );
+                                          },
+                                    ),
+                                  ),
+                                  leftTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      interval:
+                                          ((totalMasuk > totalKeluar
+                                                      ? totalMasuk
+                                                      : totalKeluar) /
+                                                  10)
+                                              .ceilToDouble(),
+                                      getTitlesWidget: (double value, TitleMeta meta) {
                                         return Text(
-                                          '${(value / 1000000).toInt()}M',
+                                          isMonthlySelected
+                                              ? '${(value / 1000000).toInt()}M'
+                                              : '${(value / 1000000).toInt()}M',
                                           style: const TextStyle(
-                                            color: Colors.grey,
-                                            fontWeight: FontWeight.bold,
                                             fontSize: 12,
+                                            color: Colors.black,
                                           ),
                                         );
                                       },
-                                  reservedSize: 42,
+                                      reservedSize: 42,
+                                    ),
+                                  ),
                                 ),
+                                borderData: FlBorderData(
+                                  show: true,
+                                  border: Border.all(
+                                    color: Colors.grey[300]!,
+                                    width: 1,
+                                  ),
+                                ),
+                                minX: isMonthlySelected
+                                    ? 1
+                                    : (pemasukanData.isNotEmpty
+                                          ? pemasukanData.first.x
+                                          : 1),
+                                maxX: isMonthlySelected
+                                    ? 12
+                                    : (pemasukanData.isNotEmpty
+                                          ? pemasukanData.last.x
+                                          : 12),
+                                minY: 0,
+                                maxY:
+                                    (totalMasuk > totalKeluar
+                                        ? totalMasuk
+                                        : totalKeluar) +
+                                    ((totalMasuk > totalKeluar
+                                                ? totalMasuk
+                                                : totalKeluar) /
+                                            10)
+                                        .ceilToDouble(),
+                                lineBarsData: [
+                                  LineChartBarData(
+                                    spots: pemasukanData,
+                                    isCurved: true,
+                                    color: const Color(0xFF2196F3),
+                                    barWidth: 3,
+                                    isStrokeCapRound: true,
+                                    dotData: const FlDotData(show: true),
+                                    belowBarData: BarAreaData(
+                                      show: true,
+                                      color: const Color(
+                                        0xFF2196F3,
+                                      ).withOpacity(0.1),
+                                    ),
+                                  ),
+                                  LineChartBarData(
+                                    spots: pengeluaranData,
+                                    isCurved: true,
+                                    color: const Color(0xFFF44336),
+                                    barWidth: 3,
+                                    isStrokeCapRound: true,
+                                    dotData: const FlDotData(show: true),
+                                    belowBarData: BarAreaData(
+                                      show: true,
+                                      color: const Color(
+                                        0xFFF44336,
+                                      ).withOpacity(0.1),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            borderData: FlBorderData(
-                              show: true,
-                              border: Border.all(
-                                color: Colors.grey[300]!,
-                                width: 1,
-                              ),
-                            ),
-                            minX: 1,
-                            maxX: 6,
-                            minY: 0,
-                            maxY: 4000000,
-                            lineBarsData: [
-                              LineChartBarData(
-                                spots: pemasukanData,
-                                isCurved: true,
-                                color: const Color(0xFF2196F3),
-                                barWidth: 3,
-                                isStrokeCapRound: true,
-                                dotData: const FlDotData(show: true),
-                                belowBarData: BarAreaData(
-                                  show: true,
-                                  color: const Color(
-                                    0xFF2196F3,
-                                  ).withOpacity(0.1),
-                                ),
-                              ),
-                              LineChartBarData(
-                                spots: pengeluaranData,
-                                isCurved: true,
-                                color: const Color(0xFFF44336),
-                                barWidth: 3,
-                                isStrokeCapRound: true,
-                                dotData: const FlDotData(show: true),
-                                belowBarData: BarAreaData(
-                                  show: true,
-                                  color: const Color(
-                                    0xFFF44336,
-                                  ).withOpacity(0.1),
-                                ),
-                              ),
-                            ],
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                      // Legend
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 16,
-                                height: 3,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF2196F3),
-                                  borderRadius: BorderRadius.all(
-                                    Radius.circular(2),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Pemasukan',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Container(
-                                width: 16,
-                                height: 3,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFF44336),
-                                  borderRadius: BorderRadius.all(
-                                    Radius.circular(2),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Pengeluaran',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
                       ),
                     ],
                   ),
@@ -567,7 +514,7 @@ class _ReportScreenState extends State<ReportScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              currencyFormatter.format(50000),
+                              currencyFormatter.format(totalKeluar),
                               style: GoogleFonts.poppins(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -606,7 +553,7 @@ class _ReportScreenState extends State<ReportScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              currencyFormatter.format(500000),
+                              currencyFormatter.format(totalMasuk),
                               style: GoogleFonts.poppins(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -652,27 +599,27 @@ class _ReportScreenState extends State<ReportScreen> {
                       ListView.separated(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: dummyTransactions.length,
+                        itemCount: transactions.length,
                         separatorBuilder: (context, index) => const Divider(),
                         itemBuilder: (context, index) {
-                          final transaction = dummyTransactions[index];
-                          final isExpense = transaction['type'] == 'expense';
+                          final transaction = transactions[index];
+                          final isKeluar = transaction['jenis'] == 'keluar';
                           return Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                transaction['title'],
+                                transaction['title'] ?? '',
                                 style: GoogleFonts.poppins(
                                   fontSize: 14,
                                   color: Colors.black,
                                 ),
                               ),
                               Text(
-                                '${isExpense ? '-' : '+'}${currencyFormatter.format(transaction['amount'])}',
+                                '${isKeluar ? '-' : '+'}${currencyFormatter.format(transaction['amount'] ?? 0)}',
                                 style: GoogleFonts.poppins(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: isExpense
+                                  color: isKeluar
                                       ? const Color(0xFFF44336)
                                       : const Color(0xFF2196F3),
                                 ),
