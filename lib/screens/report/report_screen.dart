@@ -109,6 +109,23 @@ class _ReportScreenState extends State<ReportScreen> {
     }
   }
 
+  double _getHorizontalInterval() {
+    final maxValue = totalMasuk > totalKeluar ? totalMasuk : totalKeluar;
+    if (maxValue == 0) {
+      return 1000000; // Default interval when no data
+    }
+    return (maxValue / 10).ceilToDouble();
+  }
+
+  double _getMaxY() {
+    final maxValue = totalMasuk > totalKeluar ? totalMasuk : totalKeluar;
+    if (maxValue == 0) {
+      return 10000000; // Default max value when no data
+    }
+    // Maximum nominal + (maximum nominal * 90%)
+    return maxValue + (maxValue * 0.25);
+  }
+
   List<PieChartSectionData> get pieData {
     final total = totalMasuk + totalKeluar;
     final masukPercent = total == 0 ? 0 : (totalMasuk / total) * 100;
@@ -309,20 +326,35 @@ class _ReportScreenState extends State<ReportScreen> {
                             width: isMonthlySelected ? 600 : 400,
                             child: LineChart(
                               LineChartData(
+                                lineTouchData: LineTouchData(
+                                  enabled: true,
+                                  touchTooltipData: LineTouchTooltipData(
+                                    getTooltipColor: (touchedSpot) => Colors.white,
+                                    tooltipPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    tooltipMargin: 8,
+                                    getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
+                                       return touchedBarSpots.map((barSpot) {
+                                         final flSpot = barSpot;
+                                         // Determine color based on bar index: 0 = pemasukan (blue), 1 = pengeluaran (red)
+                                         Color textColor = barSpot.barIndex == 0 
+                                             ? const Color(0xFF2196F3) // Blue for pemasukan
+                                             : const Color(0xFFF44336); // Red for pengeluaran
+                                         return LineTooltipItem(
+                                           currencyFormatter.format(flSpot.y),
+                                           TextStyle(
+                                             color: textColor,
+                                             fontWeight: FontWeight.w600,
+                                             fontSize: 12,
+                                           ),
+                                         );
+                                       }).toList();
+                                     },
+                                  ),
+                                ),
                                 gridData: FlGridData(
                                   show: true,
                                   drawVerticalLine: true,
-                                  horizontalInterval: isMonthlySelected
-                                      ? ((totalMasuk > totalKeluar
-                                                    ? totalMasuk
-                                                    : totalKeluar) /
-                                                10)
-                                            .ceilToDouble()
-                                      : ((totalMasuk > totalKeluar
-                                                    ? totalMasuk
-                                                    : totalKeluar) /
-                                                10)
-                                            .ceilToDouble(),
+                                  horizontalInterval: _getHorizontalInterval(),
                                   verticalInterval: 1,
                                   getDrawingHorizontalLine: (value) {
                                     return FlLine(
@@ -396,12 +428,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                   leftTitles: AxisTitles(
                                     sideTitles: SideTitles(
                                       showTitles: true,
-                                      interval:
-                                          ((totalMasuk > totalKeluar
-                                                      ? totalMasuk
-                                                      : totalKeluar) /
-                                                  10)
-                                              .ceilToDouble(),
+                                      interval: _getHorizontalInterval(),
                                       getTitlesWidget: (double value, TitleMeta meta) {
                                         return Text(
                                           isMonthlySelected
@@ -435,15 +462,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                           ? pemasukanData.last.x
                                           : 12),
                                 minY: 0,
-                                maxY:
-                                    (totalMasuk > totalKeluar
-                                        ? totalMasuk
-                                        : totalKeluar) +
-                                    ((totalMasuk > totalKeluar
-                                                ? totalMasuk
-                                                : totalKeluar) /
-                                            10)
-                                        .ceilToDouble(),
+                                maxY: _getMaxY(),
                                 lineBarsData: [
                                   LineChartBarData(
                                     spots: pemasukanData,

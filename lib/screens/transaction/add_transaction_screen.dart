@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -338,6 +339,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           ),
                         ),
                         keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                        ],
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Masukkan total';

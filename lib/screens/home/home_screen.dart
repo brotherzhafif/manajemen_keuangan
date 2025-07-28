@@ -441,12 +441,7 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButton: _currentIndex == 0
           ? FloatingActionButton.extended(
               onPressed: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AddAccountScreen(),
-                  ),
-                );
+                await AddAccountDialog.show(context);
                 // Reload rekening setelah tambah
                 _fetchUserAndAccounts();
               },
