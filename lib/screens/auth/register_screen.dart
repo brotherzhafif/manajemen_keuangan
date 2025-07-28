@@ -12,9 +12,11 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   bool _isChecked = true;
-  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _firstnameController = TextEditingController();
+  final TextEditingController _lastnameController = TextEditingController();
   bool _isLoading = false;
 
   Future<void> _register() async {
@@ -35,11 +37,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (user != null) {
         // Simpan data user ke koleksi 'users'
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+          'user': user.uid,
           'id_user': user.uid,
-          'username': _emailController.text.trim(),
+          'username': _usernameController.text.trim(),
           'email': _emailController.text.trim(),
-          'firstname': _nameController.text.trim(),
-          'lastname': '',
+          'password': _passwordController.text.trim(),
+          'firstname': _firstnameController.text.trim(),
+          'lastname': _lastnameController.text.trim(),
         });
 
         // Buat 4 rekening default
@@ -135,7 +139,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Name',
+                            'Username',
                             style: TextStyle(
                               color: Colors.grey,
                               fontSize: 16,
@@ -143,13 +147,69 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                           ),
                           TextField(
-                            controller: _nameController,
+                            controller: _usernameController,
                             style: const TextStyle(
                               color: Colors.black,
                               fontSize: 16,
                             ),
                             decoration: const InputDecoration(
-                              hintText: 'Value',
+                              hintText: 'Username',
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 10.0,
+                              ),
+                              border: UnderlineInputBorder(),
+                              focusedBorder: UnderlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Color(0xFF47663C),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          const Text(
+                            'First Name',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          TextField(
+                            controller: _firstnameController,
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 16,
+                            ),
+                            decoration: const InputDecoration(
+                              hintText: 'First Name',
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 10.0,
+                              ),
+                              border: UnderlineInputBorder(),
+                              focusedBorder: UnderlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Color(0xFF47663C),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          const Text(
+                            'Last Name',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          TextField(
+                            controller: _lastnameController,
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 16,
+                            ),
+                            decoration: const InputDecoration(
+                              hintText: 'Last Name',
                               contentPadding: EdgeInsets.symmetric(
                                 vertical: 10.0,
                               ),

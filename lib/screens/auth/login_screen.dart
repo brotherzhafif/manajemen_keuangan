@@ -100,10 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     TextField(
                       controller: _emailController,
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 16,
-                      ),
+                      style: const TextStyle(color: Colors.black, fontSize: 16),
                       decoration: const InputDecoration(
                         hintText: 'Value',
                         border: UnderlineInputBorder(),
@@ -124,10 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     TextField(
                       controller: _passwordController,
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 16,
-                      ),
+                      style: const TextStyle(color: Colors.black, fontSize: 16),
                       obscureText: true,
                       decoration: const InputDecoration(
                         hintText: 'Value',
@@ -160,20 +154,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                   fontSize: 18,
                                 ),
                               ),
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton(
-                        onPressed: () {},
-                        child: const Text(
-                          'Forgot password?',
-                          style: TextStyle(
-                            color: Color(0xFF4A90E2),
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
                       ),
                     ),
                   ],

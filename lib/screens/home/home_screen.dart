@@ -142,7 +142,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     Text(
-                      _userName,
+                      _userName.length > 20
+                          ? _userName.substring(0, 20) + '...'
+                          : _userName,
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -314,14 +316,16 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                account.name,
+                                account.name.length > 18
+                                    ? account.name.substring(0, 18) + '...'
+                                    : account.name,
                                 style: GoogleFonts.poppins(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.black,
                                 ),
                                 textAlign: TextAlign.center,
-                                maxLines: 1,
+                                maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 2),
