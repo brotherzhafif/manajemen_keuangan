@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final String? preSelectedKategori;
-  
+
   const AddTransactionScreen({super.key, this.preSelectedKategori});
 
   @override
@@ -16,11 +16,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _totalController = TextEditingController();
   final TextEditingController _keteranganController = TextEditingController();
-  
+
   String? _selectedKategori;
   DateTime? _selectedDate;
   String _jenisTransaksi = 'masuk';
-  
+
   @override
   void initState() {
     super.initState();
@@ -29,9 +29,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       _selectedKategori = widget.preSelectedKategori;
     }
   }
-  
+
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;  @override
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  @override
   void dispose() {
     _totalController.dispose();
     _keteranganController.dispose();
@@ -52,7 +53,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         );
         return;
       }
-      
+
       if (_selectedDate == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -65,7 +66,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         );
         return;
       }
-      
+
       try {
         await _firestore.collection('transactions').add({
           'user_id': _auth.currentUser!.uid,
@@ -76,7 +77,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           'jenis': _jenisTransaksi,
           'created_at': Timestamp.now(),
         });
-        
+
         // Reset form
         _totalController.clear();
         _keteranganController.clear();
@@ -85,7 +86,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           _selectedDate = null;
           _jenisTransaksi = 'masuk';
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -113,7 +114,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     final horizontalPadding = screenSize.width * 0.05; // 5% dari lebar layar
-    
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -138,17 +139,39 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         color: Colors.black,
                       ),
                     ),
-                    CircleAvatar(
-                      backgroundColor: const Color(0xFF47663C),
-                      child: const Icon(
-                        Icons.person,
-                        color: Colors.white,
+                    PopupMenuButton<String>(
+                      icon: const CircleAvatar(
+                        radius: 24,
+                        backgroundColor: Color(0xFF47663C),
+                        child: Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 28,
+                        ),
                       ),
+                      onSelected: (value) async {
+                        if (value == 'profile') {
+                          Navigator.pushNamed(context, '/profile');
+                        } else if (value == 'logout') {
+                          await FirebaseAuth.instance.signOut();
+                          Navigator.pushReplacementNamed(context, '/');
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'profile',
+                          child: Text('Profil'),
+                        ),
+                        const PopupMenuItem(
+                          value: 'logout',
+                          child: Text('Logout'),
+                        ),
+                      ],
                     ),
                   ],
                 ),
                 const SizedBox(height: 24),
-                
+
                 Form(
                   key: _formKey,
                   child: Column(
@@ -161,7 +184,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             .where('id_user', isEqualTo: _auth.currentUser?.uid)
                             .snapshots(),
                         builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
                             return Container(
                               height: 56,
                               decoration: BoxDecoration(
@@ -175,7 +199,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               ),
                             );
                           }
-                          
+
                           if (snapshot.hasError) {
                             return Container(
                               height: 56,
@@ -191,9 +215,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               ),
                             );
                           }
-                          
+
                           final accounts = snapshot.data?.docs ?? [];
-                          
+
                           if (accounts.isEmpty) {
                             return Container(
                               height: 56,
@@ -204,12 +228,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               child: Center(
                                 child: Text(
                                   'Tidak ada rekening tersedia',
-                                  style: GoogleFonts.poppins(color: Colors.grey[600]),
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.grey[600],
+                                  ),
                                 ),
                               ),
                             );
                           }
-                          
+
                           return DropdownButtonFormField<String>(
                             value: _selectedKategori,
                             decoration: InputDecoration(
@@ -225,20 +251,27 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8.0),
-                                borderSide: BorderSide(color: Colors.grey[300]!),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8.0),
-                                borderSide: BorderSide(color: Colors.grey[300]!),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8.0),
-                                borderSide: const BorderSide(color: Color(0xFF47663C)),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF47663C),
+                                ),
                               ),
                             ),
                             items: accounts.map((doc) {
                               final data = doc.data() as Map<String, dynamic>;
-                              final namaRekening = data['nama_rekening'] as String;
+                              final namaRekening =
+                                  data['nama_rekening'] as String;
                               return DropdownMenuItem<String>(
                                 value: namaRekening,
                                 child: Text(
@@ -265,7 +298,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         },
                       ),
                       const SizedBox(height: 16.0),
-                      
+
                       // Total Field
                       TextFormField(
                         controller: _totalController,
@@ -299,7 +332,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8.0),
-                            borderSide: const BorderSide(color: Color(0xFF47663C)),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF47663C),
+                            ),
                           ),
                         ),
                         keyboardType: TextInputType.number,
@@ -307,14 +342,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           if (value == null || value.isEmpty) {
                             return 'Masukkan total';
                           }
-                          if (double.tryParse(value.replaceAll(',', '')) == null) {
+                          if (double.tryParse(value.replaceAll(',', '')) ==
+                              null) {
                             return 'Masukkan angka yang valid';
                           }
                           return null;
                         },
                       ),
                       const SizedBox(height: 16.0),
-                      
+
                       // Tanggal Field
                       TextFormField(
                         readOnly: true,
@@ -328,11 +364,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             color: Colors.grey[600],
                             fontSize: 16,
                           ),
-                          hintText: _selectedDate == null 
-                              ? 'Pilih tanggal' 
+                          hintText: _selectedDate == null
+                              ? 'Pilih tanggal'
                               : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
                           hintStyle: GoogleFonts.poppins(
-                            color: _selectedDate == null ? Colors.grey[400] : Colors.black,
+                            color: _selectedDate == null
+                                ? Colors.grey[400]
+                                : Colors.black,
                             fontSize: 16,
                           ),
                           suffixIcon: const Icon(
@@ -349,7 +387,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8.0),
-                            borderSide: const BorderSide(color: Color(0xFF47663C)),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF47663C),
+                            ),
                           ),
                         ),
                         onTap: () async {
@@ -376,8 +416,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           }
                         },
                         controller: TextEditingController(
-                          text: _selectedDate == null 
-                              ? '' 
+                          text: _selectedDate == null
+                              ? ''
                               : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
                         ),
                         validator: (value) {
@@ -388,7 +428,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         },
                       ),
                       const SizedBox(height: 16.0),
-                      
+
                       // Keterangan Field
                       TextFormField(
                         controller: _keteranganController,
@@ -417,13 +457,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8.0),
-                            borderSide: const BorderSide(color: Color(0xFF47663C)),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF47663C),
+                            ),
                           ),
                         ),
                         maxLines: 2,
                       ),
                       const SizedBox(height: 16.0),
-                      
+
                       // Jenis Transaksi Radio Buttons
                       Text(
                         'Jenis Transaksi',
@@ -479,7 +521,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         ],
                       ),
                       const SizedBox(height: 24),
-                      
+
                       // Submit Button
                       SizedBox(
                         width: double.infinity,

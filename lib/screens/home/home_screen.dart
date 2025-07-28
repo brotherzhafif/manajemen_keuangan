@@ -35,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _fetchUserAndAccounts() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-    
+
     // Ambil nama user
     final userDoc = await FirebaseFirestore.instance
         .collection('users')
@@ -44,45 +44,44 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _userName = userDoc.data()?['firstname'] ?? '';
     });
-    
+
     // Ambil rekening user
     final rekeningSnapshot = await FirebaseFirestore.instance
         .collection('rekening')
         .where('id_user', isEqualTo: user.uid)
         .get();
-    
+
     // Ambil semua transaksi user untuk kalkulasi saldo real-time
     final transactionsSnapshot = await FirebaseFirestore.instance
         .collection('transactions')
         .where('user_id', isEqualTo: user.uid)
         .get();
-    
+
     // Hitung saldo per rekening berdasarkan transaksi
     Map<String, double> accountBalances = {};
-    
+
     for (var transactionDoc in transactionsSnapshot.docs) {
       final transactionData = transactionDoc.data();
       final kategori = transactionData['kategori'] as String;
       final total = (transactionData['total'] ?? 0).toDouble();
       final jenis = transactionData['jenis'] as String;
-      
+
       if (!accountBalances.containsKey(kategori)) {
         accountBalances[kategori] = 0.0;
       }
-      
+
       if (jenis == 'masuk') {
         accountBalances[kategori] = accountBalances[kategori]! + total;
       } else {
         accountBalances[kategori] = accountBalances[kategori]! - total;
       }
     }
-    
+
     List<Account> accounts = rekeningSnapshot.docs.map((doc) {
       final data = doc.data();
       final accountName = data['nama_rekening'] ?? '';
       final calculatedBalance = accountBalances[accountName] ?? 0.0;
-      
-      
+
       return Account(
         id: doc.id,
         name: accountName,
@@ -90,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
         iconPath: data['iconPath'] ?? '',
       );
     }).toList();
-    
+
     setState(() {
       _accounts = accounts;
     });
@@ -152,20 +151,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-                GestureDetector(
-                  onTap: () {
-                    // Navigasi ke halaman profil
-                    // Navigator.pushNamed(context, '/profile');
-                  },
-                  child: CircleAvatar(
+                PopupMenuButton<String>(
+                  icon: const CircleAvatar(
                     radius: 24,
-                    backgroundColor: const Color(0xFF47663C),
-                    child: const Icon(
-                      Icons.person,
-                      color: Colors.white,
-                      size: 28,
-                    ),
+                    backgroundColor: Color(0xFF47663C),
+                    child: Icon(Icons.person, color: Colors.white, size: 28),
                   ),
+                  onSelected: (value) async {
+                    if (value == 'profile') {
+                      Navigator.pushNamed(context, '/profile');
+                    } else if (value == 'logout') {
+                      await FirebaseAuth.instance.signOut();
+                      Navigator.pushReplacementNamed(context, '/');
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'profile',
+                      child: Text('Profil'),
+                    ),
+                    const PopupMenuItem(value: 'logout', child: Text('Logout')),
+                  ],
                 ),
               ],
             ),
@@ -197,36 +203,44 @@ class _HomeScreenState extends State<HomeScreen> {
                   StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
                         .collection('transactions')
-                        .where('user_id', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                        .where(
+                          'user_id',
+                          isEqualTo: FirebaseAuth.instance.currentUser?.uid,
+                        )
                         .snapshots(),
                     builder: (context, snapshot) {
                       double totalBalance = 0.0;
-                      
+
                       if (snapshot.hasData && _accounts.isNotEmpty) {
                         Map<String, double> accountBalances = {};
-                        
+
                         for (var transactionDoc in snapshot.data!.docs) {
-                          final transactionData = transactionDoc.data() as Map<String, dynamic>;
-                          final kategori = transactionData['kategori'] as String;
-                          final total = (transactionData['total'] ?? 0).toDouble();
+                          final transactionData =
+                              transactionDoc.data() as Map<String, dynamic>;
+                          final kategori =
+                              transactionData['kategori'] as String;
+                          final total = (transactionData['total'] ?? 0)
+                              .toDouble();
                           final jenis = transactionData['jenis'] as String;
-                          
+
                           if (!accountBalances.containsKey(kategori)) {
                             accountBalances[kategori] = 0.0;
                           }
-                          
+
                           if (jenis == 'masuk') {
-                            accountBalances[kategori] = accountBalances[kategori]! + total;
+                            accountBalances[kategori] =
+                                accountBalances[kategori]! + total;
                           } else {
-                            accountBalances[kategori] = accountBalances[kategori]! - total;
+                            accountBalances[kategori] =
+                                accountBalances[kategori]! - total;
                           }
                         }
-                        
+
                         for (var account in _accounts) {
                           totalBalance += accountBalances[account.name] ?? 0.0;
                         }
                       }
-                      
+
                       return Text(
                         currencyFormatter.format(totalBalance),
                         style: GoogleFonts.poppins(
@@ -274,7 +288,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => AccountDetailScreen(account: account),
+                            builder: (context) =>
+                                AccountDetailScreen(account: account),
                           ),
                         );
                       },
@@ -284,71 +299,79 @@ class _HomeScreenState extends State<HomeScreen> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor: lightGreenColor,
-                                  radius: 25,
-                                  child: Icon(
-                                    _getIconFromPath(account.iconPath),
-                                    color: Colors.white,
-                                    size: 30,
-                                  ),
+                          padding: const EdgeInsets.all(1),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: lightGreenColor,
+                                radius: 25,
+                                child: Icon(
+                                  _getIconFromPath(account.iconPath),
+                                  color: Colors.white,
+                                  size: 30,
                                 ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  account.name,
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                account.name,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black,
                                 ),
-                                const SizedBox(height: 2),
-                                StreamBuilder<QuerySnapshot>(
-                                  stream: FirebaseFirestore.instance
-                                      .collection('transactions')
-                                      .where('user_id', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
-                                      .where('kategori', isEqualTo: account.name)
-                                      .snapshots(),
-                                  builder: (context, snapshot) {
-                                    double accountBalance = 0.0;
-                                    
-                                    if (snapshot.hasData) {
-                                      for (var doc in snapshot.data!.docs) {
-                                        final data = doc.data() as Map<String, dynamic>;
-                                        final total = (data['total'] ?? 0).toDouble();
-                                        final jenis = data['jenis'] as String;
-                                        
-                                        if (jenis == 'masuk') {
-                                          accountBalance += total;
-                                        } else {
-                                          accountBalance -= total;
-                                        }
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              StreamBuilder<QuerySnapshot>(
+                                stream: FirebaseFirestore.instance
+                                    .collection('transactions')
+                                    .where(
+                                      'user_id',
+                                      isEqualTo: FirebaseAuth
+                                          .instance
+                                          .currentUser
+                                          ?.uid,
+                                    )
+                                    .where('kategori', isEqualTo: account.name)
+                                    .snapshots(),
+                                builder: (context, snapshot) {
+                                  double accountBalance = 0.0;
+
+                                  if (snapshot.hasData) {
+                                    for (var doc in snapshot.data!.docs) {
+                                      final data =
+                                          doc.data() as Map<String, dynamic>;
+                                      final total = (data['total'] ?? 0)
+                                          .toDouble();
+                                      final jenis = data['jenis'] as String;
+
+                                      if (jenis == 'masuk') {
+                                        accountBalance += total;
+                                      } else {
+                                        accountBalance -= total;
                                       }
                                     }
-                                    
-                                    return Text(
-                                      currencyFormatter.format(accountBalance),
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black87,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
+                                  }
+
+                                  return Text(
+                                    currencyFormatter.format(accountBalance),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  );
+                                },
+                              ),
+                            ],
                           ),
+                        ),
                       ),
                     );
                   },
@@ -366,12 +389,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Widget untuk tab transaksi
   Widget _buildTransaksiTab() {
-    return const AddTransactionScreen();
+    return Stack(children: [const AddTransactionScreen()]);
   }
 
   // Widget untuk tab laporan
   Widget _buildLaporanTab() {
-    return const ReportScreen();
+    return Stack(children: [const ReportScreen()]);
   }
 
   @override
@@ -426,12 +449,12 @@ class _HomeScreenState extends State<HomeScreen> {
               backgroundColor: primaryColor,
               icon: const Icon(Icons.add, color: Colors.white),
               label: Text(
-                 'Tambah Rekening',
-                 style: GoogleFonts.poppins(
-                   color: Colors.white,
-                   fontWeight: FontWeight.w500,
-                 ),
-               ),
+                'Tambah Rekening',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             )
           : null,
     );

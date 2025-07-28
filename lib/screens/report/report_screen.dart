@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ReportScreen extends StatefulWidget {
   const ReportScreen({super.key});
@@ -24,14 +25,20 @@ class _ReportScreenState extends State<ReportScreen> {
       value: 80,
       color: const Color(0xFF2196F3),
       title: '80%',
-      titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      titleStyle: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
+      ),
       radius: 60,
     ),
     PieChartSectionData(
       value: 20,
       color: const Color(0xFFF44336),
       title: '20%',
-      titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      titleStyle: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.bold,
+      ),
       radius: 60,
     ),
   ];
@@ -90,13 +97,34 @@ class _ReportScreenState extends State<ReportScreen> {
                         color: Colors.black,
                       ),
                     ),
-                    CircleAvatar(
-                      backgroundColor: const Color(0xFF47663C),
-                      child: Icon(
-                        Icons.person,
-                        color: Colors.white,
-                        size: 24,
+                    PopupMenuButton<String>(
+                      icon: const CircleAvatar(
+                        radius: 24,
+                        backgroundColor: Color(0xFF47663C),
+                        child: Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 28,
+                        ),
                       ),
+                      onSelected: (value) async {
+                        if (value == 'profile') {
+                          Navigator.pushNamed(context, '/profile');
+                        } else if (value == 'logout') {
+                          await FirebaseAuth.instance.signOut();
+                          Navigator.pushReplacementNamed(context, '/');
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'profile',
+                          child: Text('Profil'),
+                        ),
+                        const PopupMenuItem(
+                          value: 'logout',
+                          child: Text('Logout'),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -120,14 +148,18 @@ class _ReportScreenState extends State<ReportScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
-                              color: isMonthlySelected ? primaryColor : Colors.transparent,
+                              color: isMonthlySelected
+                                  ? primaryColor
+                                  : Colors.transparent,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               'Bulanan',
                               textAlign: TextAlign.center,
                               style: GoogleFonts.poppins(
-                                color: isMonthlySelected ? Colors.white : Colors.grey[600],
+                                color: isMonthlySelected
+                                    ? Colors.white
+                                    : Colors.grey[600],
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -145,14 +177,18 @@ class _ReportScreenState extends State<ReportScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
-                              color: !isMonthlySelected ? primaryColor : Colors.transparent,
+                              color: !isMonthlySelected
+                                  ? primaryColor
+                                  : Colors.transparent,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               'Tahunan',
                               textAlign: TextAlign.center,
                               style: GoogleFonts.poppins(
-                                color: !isMonthlySelected ? Colors.white : Colors.grey[600],
+                                color: !isMonthlySelected
+                                    ? Colors.white
+                                    : Colors.grey[600],
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -326,64 +362,87 @@ class _ReportScreenState extends State<ReportScreen> {
                                   showTitles: true,
                                   reservedSize: 30,
                                   interval: 1,
-                                  getTitlesWidget: (double value, TitleMeta meta) {
-                                    const style = TextStyle(
-                                      color: Colors.grey,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    );
-                                    Widget text;
-                                    switch (value.toInt()) {
-                                      case 1:
-                                        text = const Text('Jul', style: style);
-                                        break;
-                                      case 2:
-                                        text = const Text('Agu', style: style);
-                                        break;
-                                      case 3:
-                                        text = const Text('Sep', style: style);
-                                        break;
-                                      case 4:
-                                        text = const Text('Okt', style: style);
-                                        break;
-                                      case 5:
-                                        text = const Text('Nov', style: style);
-                                        break;
-                                      case 6:
-                                        text = const Text('Des', style: style);
-                                        break;
-                                      default:
-                                        text = const Text('', style: style);
-                                        break;
-                                    }
-                                    return SideTitleWidget(
-                                      axisSide: meta.axisSide,
-                                      child: text,
-                                    );
-                                  },
+                                  getTitlesWidget:
+                                      (double value, TitleMeta meta) {
+                                        const style = TextStyle(
+                                          color: Colors.grey,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        );
+                                        Widget text;
+                                        switch (value.toInt()) {
+                                          case 1:
+                                            text = const Text(
+                                              'Jul',
+                                              style: style,
+                                            );
+                                            break;
+                                          case 2:
+                                            text = const Text(
+                                              'Agu',
+                                              style: style,
+                                            );
+                                            break;
+                                          case 3:
+                                            text = const Text(
+                                              'Sep',
+                                              style: style,
+                                            );
+                                            break;
+                                          case 4:
+                                            text = const Text(
+                                              'Okt',
+                                              style: style,
+                                            );
+                                            break;
+                                          case 5:
+                                            text = const Text(
+                                              'Nov',
+                                              style: style,
+                                            );
+                                            break;
+                                          case 6:
+                                            text = const Text(
+                                              'Des',
+                                              style: style,
+                                            );
+                                            break;
+                                          default:
+                                            text = const Text('', style: style);
+                                            break;
+                                        }
+                                        return SideTitleWidget(
+                                          axisSide: meta.axisSide,
+                                          child: text,
+                                        );
+                                      },
                                 ),
                               ),
                               leftTitles: AxisTitles(
                                 sideTitles: SideTitles(
                                   showTitles: true,
                                   interval: 1000000,
-                                  getTitlesWidget: (double value, TitleMeta meta) {
-                                    return Text(
-                                      '${(value / 1000000).toInt()}M',
-                                      style: const TextStyle(
-                                        color: Colors.grey,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12,
-                                      ),
-                                    );
-                                  },
+                                  getTitlesWidget:
+                                      (double value, TitleMeta meta) {
+                                        return Text(
+                                          '${(value / 1000000).toInt()}M',
+                                          style: const TextStyle(
+                                            color: Colors.grey,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
+                                          ),
+                                        );
+                                      },
                                   reservedSize: 42,
                                 ),
                               ),
                             ),
                             borderData: FlBorderData(
                               show: true,
-                              border: Border.all(color: Colors.grey[300]!, width: 1),
+                              border: Border.all(
+                                color: Colors.grey[300]!,
+                                width: 1,
+                              ),
                             ),
                             minX: 1,
                             maxX: 6,
@@ -396,12 +455,12 @@ class _ReportScreenState extends State<ReportScreen> {
                                 color: const Color(0xFF2196F3),
                                 barWidth: 3,
                                 isStrokeCapRound: true,
-                                dotData: const FlDotData(
-                                  show: true,
-                                ),
+                                dotData: const FlDotData(show: true),
                                 belowBarData: BarAreaData(
                                   show: true,
-                                  color: const Color(0xFF2196F3).withOpacity(0.1),
+                                  color: const Color(
+                                    0xFF2196F3,
+                                  ).withOpacity(0.1),
                                 ),
                               ),
                               LineChartBarData(
@@ -410,12 +469,12 @@ class _ReportScreenState extends State<ReportScreen> {
                                 color: const Color(0xFFF44336),
                                 barWidth: 3,
                                 isStrokeCapRound: true,
-                                dotData: const FlDotData(
-                                  show: true,
-                                ),
+                                dotData: const FlDotData(show: true),
                                 belowBarData: BarAreaData(
                                   show: true,
-                                  color: const Color(0xFFF44336).withOpacity(0.1),
+                                  color: const Color(
+                                    0xFFF44336,
+                                  ).withOpacity(0.1),
                                 ),
                               ),
                             ],
@@ -434,7 +493,9 @@ class _ReportScreenState extends State<ReportScreen> {
                                 height: 3,
                                 decoration: const BoxDecoration(
                                   color: Color(0xFF2196F3),
-                                  borderRadius: BorderRadius.all(Radius.circular(2)),
+                                  borderRadius: BorderRadius.all(
+                                    Radius.circular(2),
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -454,7 +515,9 @@ class _ReportScreenState extends State<ReportScreen> {
                                 height: 3,
                                 decoration: const BoxDecoration(
                                   color: Color(0xFFF44336),
-                                  borderRadius: BorderRadius.all(Radius.circular(2)),
+                                  borderRadius: BorderRadius.all(
+                                    Radius.circular(2),
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -609,7 +672,9 @@ class _ReportScreenState extends State<ReportScreen> {
                                 style: GoogleFonts.poppins(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: isExpense ? const Color(0xFFF44336) : const Color(0xFF2196F3),
+                                  color: isExpense
+                                      ? const Color(0xFFF44336)
+                                      : const Color(0xFF2196F3),
                                 ),
                               ),
                             ],
