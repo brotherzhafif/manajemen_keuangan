@@ -1,16 +1,50 @@
 # fin_tracker
 
-A new Flutter project.
+Aplikasi manajemen keuangan berbasis Flutter untuk mencatat pemasukan, pengeluaran, dan memantau saldo rekening secara real-time.
 
-## Getting Started
+## Fitur Utama
 
-This project is a starting point for a Flutter application.
+- Manajemen rekening (tambah, detail, saldo otomatis)
+- Pencatatan transaksi (pemasukan & pengeluaran)
+- Laporan keuangan (grafik pie & line, riwayat transaksi)
+- Autentikasi pengguna (Firebase Auth)
+- Penyimpanan data di Cloud Firestore
+- Profil pengguna
 
-A few resources to get you started if this is your first Flutter project:
+## Instalasi & Setup
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+1. **Install dependencies**
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+   ```bash
+   flutter pub get
+   ```
+
+2. **Setup Firebase**
+
+   - Buat project di [Firebase Console](https://console.firebase.google.com/)
+   - Tambahkan aplikasi Android/iOS ke project Firebase
+   - Download file `google-services.json` (Android) dan/atau `GoogleService-Info.plist` (iOS) ke folder yang sesuai (`android/app` dan `ios/Runner`)
+   - Aktifkan Authentication dan Firestore di Firebase Console
+
+3. **Jalankan aplikasi**
+   ```bash
+   flutter run
+   ```
+
+## Library yang Digunakan
+
+- [firebase_core](https://pub.dev/packages/firebase_core) - Integrasi Firebase
+- [cloud_firestore](https://pub.dev/packages/cloud_firestore) - Database Cloud Firestore
+- [firebase_auth](https://pub.dev/packages/firebase_auth) - Autentikasi pengguna
+- [google_fonts](https://pub.dev/packages/google_fonts) - Font custom Google
+- [intl](https://pub.dev/packages/intl) - Format currency & tanggal
+- [cupertino_icons](https://pub.dev/packages/cupertino_icons) - Icon iOS
+- [fl_chart](https://pub.dev/packages/fl_chart) - Grafik pie & line
+
+## Struktur Folder
+
+- `lib/screens/` - Halaman utama aplikasi (home, transaksi, laporan, profil, dll)
+- `lib/models/` - Model data (contoh: Account)
+- `ios/` dan `android/` - Konfigurasi platform
+- `pubspec.yaml` - Daftar dependencies
+  restore sesuai kebutuhan aplikasi.
